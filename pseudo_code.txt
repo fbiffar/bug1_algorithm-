@@ -1,0 +1,11 @@
+PSEUDO CODE OF BUG 1
+input: goal
+2: loop
+3: repeat move on a straight line from Position to goal
+4: until goal is reached or obstacle is encountered
+5: if goal is reached then exit with success
+6: if obstacle is hit : repeat follow boundary recording point (opt point) Position with shortest distance to goal
+7: until goal is reached or opt point is re-encountered
+8: if goal is reached then exit with success
+9: if previous opt point is current opt point then exit with failure
+10: go to line 2 

@@ -1,0 +1,77 @@
+THE ALGORITHM:
+
+This code is using the bug 1 algorithm in order to navigate the turtle bot to a defined goal location.
+The basic idea of bug 1 is to move the bot on a straight line to the goal, if it encounters obstacles on the way, it encircles them once and remembers the point where it was closest to the goal. After the encirclement it returns to that point and leaves from there towards the goal again. 
+This basic idea gives also the structure to the code. 
+Basically there are three states:
+
+1. 'LINE'
+In this state the robot calculates in which direction it has to head in order to go on a strait line towards the goal, then turns to the desired heading and moves towards the goal. 
+It does that until it either reaches the goal or hits an obstacle. For the last one it will go into the second mode.
+
+2. 'OBSTACLE'
+This state is the core part of bug 1. The idea to make the robot follow the wall sounds very simple but it is not when implementing it.
+In this Code there are different conditions checked and acted upon them: 
+
+'Navigate around the obstacle'
+
+	a) if the obstacle is in front turn sharp left
+		in order to measure whether there is an obstacle in front, check whether the minimum distance measured from the scan data of range 315°-45° is less than 20 cm  
+	b) elif the front right loses contact to the wall turn sharply right 
+		the robot cfhecks whether the minimum distance measured from the scan data of range 290°- 315° is more than 100 cm, which means the wall it follows has a corner/ it will lose contact  
+	c) elif the robot is not parallel to the wall make it parallel 
+		the robot compares whether the average distance of 264°-267° and 274°-277° is the same (error of 0.008 is allowed)
+	d) elif the robot is closer than 15 cm to the wall, turn left
+		the robot checks whether the minimum distance measured from the scan data of range 269°-271° is less than 15 cm
+	e) elif the robot is further than 20cm to the wall, turn right 
+		the robot checks whether the minimum distance measured from the scan data of range 269°-271° is more than 20 cm
+	f) else move forward 
+		all the criteria above are fullfilled, that means the bot is parralel to the wall (that will not have a corner in the range of the forward movement) and has a distance of 15 to 20 cm 			away from the wall, now the bot can move without losing the contact to the wall
+	
+Taking more than just a single measurement point into consideration (c) and averaging over them makes the robot less sensitive to noise. 
+Checking a broader field (for eg a) and b) ) takes the acutal physical dimension of the robot into consideration.
+Taking the min/max data of a range (b) in order to check the distance to the wall does make the results less sensitive if the bot is not perfectly alligned to the wall. 
+
+
+During the navigation around the obstacle to robot checks each callback how far its distance to the goal is, if it is less than the one it previously found as optimal point it will replace the optimal leaving point with the better one and stores the distance to the goal in order to compare it with the next point he will be at. The first encirclemt will be terminated if the bot is in the area (r=10cm) of the starting point of the encirclement, then it will enter the next mode 
+
+3. 'LEAVE'
+Here again the bot has to navigate around the obstacle, not once but to the 'optimal leaving point' which was discovered by the prevoius mode. 
+Before doing so it checks whether the optimal leaving point is the same to the previous one, this is for the reachability check, which is explained below. If the points are the same it stops the bot, else the bot will move to the desired location.
+Once it is in the area (r=10cm) of this point, it will switch to the first state. 
+
+
+Independently of the state we are in the robot checks each callback whether the goal was reached or not and would stop if this was the case. 
+Since those three steps are reactions to the scan data the according functions are placed in the laserdata callback function, each time we receive new data the behaviour of the robot is being adapted according to the states descriebed above. 
+
+
+
+COMMENTS ON APPROACH:
+
+Why the area check and not an exact check ? 
+
+The bot is allowed to move on a lane width 5 cm around the obstacle, hence it might not pass the exact point again, the addition 5 cm is a safety margin in case there is noise when passing the point or the robot is a bit off path. 
+
+
+
+Reachability: 
+
+In order to check whether a goal is reachable or not the robot saves the optimal leaving point of the previous obstacle and compares after the encirclemt whether the new optimal leaving point is the same of not. If it is the same, it means that the robot encircled the same obstacle again and can not reach the goal. Since bug 1 always finds a solution if there is one, it means that there is none and the goal point is not reachable. 
+
+
+
+	
+
+Difficulties encountered in real life testing: 
+
+-	the scan data of the real robot does neither have 360 measurements nor a constant amount hence each callback a ratio had to be calculated with that we can multiply the angles used for 		reading out the scan data. 
+		ratio = len(range list) / 360 
+-	Furthermore the scanned data had also random 0 values which would lead to bad behaviour of the robot, in order to encounter that all 0 values of the scan data where filled with the value of 		the previous non zero value of the array, giving us smooth results. 
+
+
+
+Problems in the simulation: 
+
+The pole on the top right is to thin because of that the robot loses contact and often does not manage to encircle it properly.
+one possibility is to reduce all the speeds sothat the robot cannot just "pass by" the obstacle but that would slow it down a lot.
+
